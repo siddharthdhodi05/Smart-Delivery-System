@@ -1,126 +1,169 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const AddOrder = () => {
-  const [formData, setFormData] = useState({
-    orderId: "",
-    customer: "",
-    status: "",
-    date: "",
+  const navigate = useNavigate();
+  const [orderData, setOrderData] = useState({
+    orderNumber: "",
+    customer: {
+      name: "",
+      phone: "",
+      address: "",
+    },
+    area: "",
+    items: [],
+    totalAmount: 0,
+    status: "pending",
+    scheduledFor: "",
   });
+  const [error, setError] = useState(null);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    // Check if the field is under customer
+    if (name.startsWith("customer-")) {
+      // Update the customer object
+      setOrderData({
+        ...orderData,
+        customer: {
+          ...orderData.customer,
+          [name.split("-")[1]]: value, // Get the property (name, phone, address)
+        },
+      });
+    } else {
+      // Handle other fields
+      setOrderData({
+        ...orderData,
+        [name]: value,
+      });
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleAddOrder = async (e) => {
     e.preventDefault();
-    console.log("Order Data Submitted:", formData);
-    // Add backend API call logic here
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No token found in local storage");
+      }
+
+      // Make the API request to add the order
+      const response = await axios.post(
+        "http://localhost:5001/api/orders", // Adjust the URL accordingly
+        orderData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      alert("Order added successfully!");
+      navigate("/order"); // Redirect to the orders list page (adjust route as necessary)
+    } catch (error) {
+      console.error("Error adding order:", error);
+      setError(error.response?.data?.message || "Failed to add order. Please try again.");
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-lg">
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          Add New Order
-        </h1>
-        <form onSubmit={handleSubmit}>
-          {/* Order ID */}
-          <div className="mb-4">
-            <label
-              htmlFor="orderId"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Order ID
-            </label>
-            <input
-              type="text"
-              id="orderId"
-              name="orderId"
-              value={formData.orderId}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter Order ID"
-              required
-            />
-          </div>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Add Order</h1>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <form onSubmit={handleAddOrder} className="space-y-4">
+        <div>
+          <label className="block text-gray-700">Order Number</label>
+          <input
+            type="text"
+            name="orderNumber"
+            value={orderData.orderNumber}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
 
-          {/* Customer */}
-          <div className="mb-4">
-            <label
-              htmlFor="customer"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Customer
-            </label>
-            <input
-              type="text"
-              id="customer"
-              name="customer"
-              value={formData.customer}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter Customer Name"
-              required
-            />
-          </div>
+        {/* Customer Details */}
+        <div>
+          <label className="block text-gray-700">Customer Name</label>
+          <input
+            type="text"
+            name="customer-name"
+            value={orderData.customer.name}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700">Customer Phone</label>
+          <input
+            type="text"
+            name="customer-phone"
+            value={orderData.customer.phone}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700">Customer Address</label>
+          <input
+            type="text"
+            name="customer-address"
+            value={orderData.customer.address}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
 
-          {/* Status */}
-          <div className="mb-4">
-            <label
-              htmlFor="status"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Status
-            </label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Delivered">Delivered</option>
-            </select>
-          </div>
+        {/* Other Order Details */}
+        <div>
+          <label className="block text-gray-700">Area</label>
+          <input
+            type="text"
+            name="area"
+            value={orderData.area}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
 
-          {/* Date */}
-          <div className="mb-6">
-            <label
-              htmlFor="date"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Date
-            </label>
-            <input
-              type="date"
-              id="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+        <div>
+          <label className="block text-gray-700">Total Amount</label>
+          <input
+            type="number"
+            name="totalAmount"
+            value={orderData.totalAmount}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
 
-          {/* Submit Button */}
-          <div className="text-center">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Add Order
-            </button>
-          </div>
-        </form>
-      </div>
+        <div>
+          <label className="block text-gray-700">Scheduled For</label>
+          <input
+            type="datetime-local"
+            name="scheduledFor"
+            value={orderData.scheduledFor}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
+          Add Order
+        </button>
+      </form>
     </div>
   );
 };

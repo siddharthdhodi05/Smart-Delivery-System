@@ -1,11 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../redux/authSlice'; // Your logout action
 
 const Navbar = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Assuming you will use Redux or context to manage authentication state
-  const isAuthenticated = true; // Replace with your authentication logic
+  // Check if the user is authenticated (token exists in localStorage or Redux)
+  const isAuthenticated = localStorage.getItem('token') !== null;
 
   const routes = [
     { name: 'Dashboard', path: '/' },
@@ -16,9 +19,14 @@ const Navbar = () => {
 
   // Logout handler
   const handleLogout = () => {
-    // Perform logout logic, such as clearing tokens or calling an API
-    // After logout, redirect to login page
-    //navigate('/login');
+    // Remove token from localStorage
+    localStorage.removeItem('token');
+
+    // Dispatch logout action to update Redux state
+    dispatch(logout());
+
+    // Redirect to login page
+    navigate('/login');
   };
 
   return (

@@ -12,7 +12,11 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+const corsOption = {
+  origin: "http://localhost:5173",
+  credentials: true,
+};
+app.use(cors(corsOption));
 app.use(express.json());
 
 // Routes

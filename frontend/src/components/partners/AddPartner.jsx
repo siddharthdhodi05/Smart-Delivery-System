@@ -1,103 +1,144 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const AddPartner = () => {
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+  const [partnerData, setPartnerData] = useState({
     name: "",
-    email: "",
     phone: "",
+    email: "",
+    shiftStart: "",
+    shiftEnd: "",
+    currentLoad: 0,
+    assignedOrders: [],
   });
+  const [error, setError] = useState(null);
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setPartnerData({ ...partnerData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleAddPartner = async (e) => {
     e.preventDefault();
-    // POST request logic here
-    console.log("Form submitted:", formData);
-    // Reset form after submission
-    setFormData({ name: "", email: "", phone: "" });
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No token found in local storage");
+      }
+
+      // Format the shift object
+      const shift = {
+        start: partnerData.shiftStart,
+        end: partnerData.shiftEnd,
+      };
+
+      // Make the API request
+      const response = await axios.post(
+        "http://localhost:5001/api/partners",
+        {
+          name: partnerData.name,
+          phone: partnerData.phone,
+          email: partnerData.email,
+          shift,
+          currentLoad: partnerData.currentLoad,
+          assignedOrders: partnerData.assignedOrders,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      alert("Partner added successfully!");
+      navigate("/partner"); // Redirect to the partners list page
+    } catch (error) {
+      console.error("Error adding partner:", error);
+      setError(error.response?.data?.message || "Failed to add partner. Please try again.");
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Add Partner</h1>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <form onSubmit={handleAddPartner} className="space-y-4">
+        <div>
+          <label className="block text-gray-700">Name</label>
+          <input
+            type="text"
+            name="name"
+            value={partnerData.name}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700">Phone</label>
+          <input
+            type="text"
+            name="phone"
+            value={partnerData.phone}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700">Email</label>
+          <input
+            type="email"
+            name="email"
+            value={partnerData.email}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700">Shift Start</label>
+          <input
+            type="datetime-local"
+            name="shiftStart"
+            value={partnerData.shiftStart}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700">Shift End</label>
+          <input
+            type="datetime-local"
+            name="shiftEnd"
+            value={partnerData.shiftEnd}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700">Current Load</label>
+          <input
+            type="number"
+            name="currentLoad"
+            value={partnerData.currentLoad}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            min="0"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
           Add Partner
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name Input */}
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter partner's name"
-              required
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
-          </div>
-
-          {/* Email Input */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter partner's email"
-              required
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
-          </div>
-
-          {/* Phone Input */}
-          <div>
-            <label
-              htmlFor="phone"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Phone
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter partner's phone number"
-              required
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 transition-all"
-            >
-              Add Partner
-            </button>
-          </div>
-        </form>
-      </div>
+        </button>
+      </form>
     </div>
   );
 };

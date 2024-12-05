@@ -17,7 +17,7 @@ export const getAssignments = async (req, res) => {
 // Create a new assignment
 export const createAssignment = async (req, res) => {
   try {
-    const { orderId, partnerId, status, reason } = req.body;
+    const { orderId, partnerId, status, reason, assignedAt } = req.body;
 
     const order = await Order.findById(orderId);
     const partner = await Partner.findById(partnerId);
@@ -26,11 +26,15 @@ export const createAssignment = async (req, res) => {
       return res.status(404).json({ message: 'Order or Partner not found' });
     }
 
+    console.log('Order found:', order);
+    console.log('Partner found:', partner);
+
     const assignment = new Assignment({
       orderId,
       partnerId,
       status,
       reason,
+      assignedAt,
     });
 
     if (status === 'success') {
@@ -48,6 +52,7 @@ export const createAssignment = async (req, res) => {
 
     res.status(201).json(assignment);
   } catch (error) {
+    console.error('Error during assignment creation:', error.message);
     res.status(500).json({ message: error.message });
   }
 };

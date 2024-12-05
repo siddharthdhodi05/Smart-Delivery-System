@@ -1,127 +1,167 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const CreateAssignment = () => {
-  const [formData, setFormData] = useState({
-    assignmentId: "",
-    orderId: "",
-    partnerId: "",
-    status: "",
-  });
+  const [orders, setOrders] = useState([]);
+  const [partners, setPartners] = useState([]);
+  const [selectedOrderId, setSelectedOrderId] = useState("");
+  const [selectedPartnerId, setSelectedPartnerId] = useState("");
+  const [assignedAt, setAssignedAt] = useState("");
+  const [status, setStatus] = useState("success"); // default status
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  useEffect(() => {
+    // Fetch available orders
+    const fetchOrders = async () => {
+      try {
+        const response = await axios.get("http://localhost:5001/api/orders", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // Add token here
+          },
+        });
+        setOrders(response.data);
+      } catch (error) {
+        console.error("Error fetching orders", error);
+      }
+    };
 
-  const handleSubmit = (e) => {
+    // Fetch available partners
+    const fetchPartners = async () => {
+      try {
+        const response = await axios.get("http://localhost:5001/api/partners", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // Add token here
+          },
+        });
+        setPartners(response.data);
+      } catch (error) {
+        console.error("Error fetching partners", error);
+      }
+    };
+
+    fetchOrders();
+    fetchPartners();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Assignment Data Submitted:", formData);
-    // Add backend API call logic here
+
+    // Ensure the assignedAt date is formatted correctly
+    const assignedAtDate = new Date(assignedAt).toISOString();
+
+    const assignmentData = {
+      orderId: selectedOrderId,
+      partnerId: selectedPartnerId,
+      assignedAt: assignedAtDate, // Use formatted date
+      status: status,
+    };
+
+    console.log("Sending data to the server:", assignmentData); // Log request data
+
+    try {
+      await axios.post(
+        "http://localhost:5001/api/assignments",
+        assignmentData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      navigate("/assignment"); // Redirect to the assignments list
+    } catch (error) {
+      //console.error("Error creating assignment", error);
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-lg">
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          Create Assignment
-        </h1>
-        <form onSubmit={handleSubmit}>
-          {/* Assignment ID */}
-          <div className="mb-4">
-            <label
-              htmlFor="assignmentId"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Assignment ID
-            </label>
-            <input
-              type="text"
-              id="assignmentId"
-              name="assignmentId"
-              value={formData.assignmentId}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter Assignment ID"
-              required
-            />
-          </div>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Create Assignment</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="orderId" className="block text-sm font-medium text-gray-700">
+            Select Order
+          </label>
+          <select
+            id="orderId"
+            name="orderId"
+            value={selectedOrderId}
+            onChange={(e) => setSelectedOrderId(e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          >
+            <option value="">Select an Order</option>
+            {orders.map((order) => (
+              <option key={order._id} value={order._id}>
+                {order.orderNumber}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          {/* Order ID */}
-          <div className="mb-4">
-            <label
-              htmlFor="orderId"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Order ID
-            </label>
-            <input
-              type="text"
-              id="orderId"
-              name="orderId"
-              value={formData.orderId}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter Order ID"
-              required
-            />
-          </div>
+        <div>
+          <label htmlFor="partnerId" className="block text-sm font-medium text-gray-700">
+            Select Partner
+          </label>
+          <select
+            id="partnerId"
+            name="partnerId"
+            value={selectedPartnerId}
+            onChange={(e) => setSelectedPartnerId(e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          >
+            <option value="">Select a Partner</option>
+            {partners.map((partner) => (
+              <option key={partner._id} value={partner._id}>
+                {partner.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          {/* Partner ID */}
-          <div className="mb-4">
-            <label
-              htmlFor="partnerId"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Partner ID
-            </label>
-            <input
-              type="text"
-              id="partnerId"
-              name="partnerId"
-              value={formData.partnerId}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter Partner ID"
-              required
-            />
-          </div>
+        <div>
+          <label htmlFor="assignedAt" className="block text-sm font-medium text-gray-700">
+            Assigned At
+          </label>
+          <input
+            type="datetime-local"
+            id="assignedAt"
+            name="assignedAt"
+            value={assignedAt}
+            onChange={(e) => setAssignedAt(e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
+        </div>
 
-          {/* Status */}
-          <div className="mb-6">
-            <label
-              htmlFor="status"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Status
-            </label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select Status</option>
-              <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
+        <div>
+          <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+            Status
+          </label>
+          <select
+            id="status"
+            name="status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          >
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
 
-          {/* Submit Button */}
-          <div className="text-center">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Create Assignment
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all"
+          >
+            Create Assignment
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
